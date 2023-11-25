@@ -11,7 +11,8 @@ import torch.nn.functional as F
 from functools import partial, reduce
 from operator import mul
 
-from timm.models.vision_transformer import VisionTransformer, _cfg
+from timm.models.vision_transformer import VisionTransformer, Block, _cfg
+from timm.models.registry import register_model
 from timm.models.layers.helpers import to_2tuple
 from timm.models.layers import PatchEmbed
 
@@ -79,16 +80,24 @@ class CAST(VisionTransformer):
 
         # ----------------------------------------------------------------------
         # Encoder specifics
-        cumsum_depth = [0]
-        for d in depths:
-            cumsum_depth.append(d + cumsum_depth[-1])
+        del self.blocks # overwrite with new blocks
+        dpr = [x.item() for x in torch.linspace(0, 0, sum(depths))]
+        dpr = dpr[::-1]
 
         blocks = []
         pools = []
         for ind, depth in enumerate(depths):
 
             # Build Attention Blocks
-            blocks.append(self.blocks[cumsum_depth[ind]:cumsum_depth[ind+1]])
+            block = []
+            for _ in range(depth):
+                block.append(Block(dim=kwargs['embed_dim'],
+                                   num_heads=kwargs['num_heads'],
+                                   mlp_ratio=kwargs['mlp_ratio'],
+                                   qkv_bias=kwargs['qkv_bias'],
+                                   drop_path=dpr.pop(),
+                                   norm_layer=kwargs['norm_layer']))
+            blocks.append(nn.Sequential(*block))
 
             # Build Pooling layers
             pool = Pooling(
@@ -313,6 +322,7 @@ class ConvStem(nn.Module):
         return x
 
 
+@register_model
 def cast_small(**kwargs):
     model = CAST(
         patch_size=8, embed_dim=384, num_clusters=[64, 32, 16, 8],
@@ -322,6 +332,7 @@ def cast_small(**kwargs):
     return model
 
 
+@register_model
 def cast_small_deep(**kwargs):
     # minus one ViT block
     model = CAST(
@@ -332,6 +343,7 @@ def cast_small_deep(**kwargs):
     return model
 
 
+@register_model
 def cast_base(**kwargs):
     model = CAST(
         patch_size=8, embed_dim=768, num_clusters=[64, 32, 16, 8],
@@ -341,6 +353,7 @@ def cast_base(**kwargs):
     return model
 
 
+@register_model
 def cast_base_deep(**kwargs):
     # minus one ViT block
     model = CAST(

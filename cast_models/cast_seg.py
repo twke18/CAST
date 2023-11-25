@@ -12,6 +12,7 @@ from functools import partial, reduce
 from operator import mul
 
 from timm.models.vision_transformer import VisionTransformer, Block, _cfg
+from timm.models.registry import register_model
 from timm.models.layers.helpers import to_2tuple
 from timm.models.layers import PatchEmbed
 
@@ -416,6 +417,7 @@ class ConvStem(nn.Module):
         return x
 
 
+@register_model
 def cast_small(**kwargs):
     model = CAST(
         patch_size=8, embed_dim=384, num_clusters=[64, 32, 16, 8],
@@ -425,6 +427,7 @@ def cast_small(**kwargs):
     return model
 
 
+@register_model
 def cast_small_deep(**kwargs):
     # minus one ViT block
     model = CAST(
@@ -435,6 +438,7 @@ def cast_small_deep(**kwargs):
     return model
 
 
+@register_model
 def cast_base(**kwargs):
     model = CAST(
         patch_size=8, embed_dim=768, num_clusters=[64, 32, 16, 8],
@@ -444,6 +448,7 @@ def cast_base(**kwargs):
     return model
 
 
+@register_model
 def cast_base_deep(**kwargs):
     # minus one ViT block
     model = CAST(

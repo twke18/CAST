@@ -31,7 +31,7 @@ from torch.utils.tensorboard import SummaryWriter
 import suppix_utils.builder
 import moco.loader
 import moco.optimizer
-import suppixl_utils.datasets_seeds as datasets
+import suppix_utils.datasets_seeds as datasets
 
 import cast_models.cast
 import models.tome_suppix

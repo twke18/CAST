@@ -119,7 +119,7 @@ class MoCo_SupPix(MoCo_ViT):
         mlp_dim: hidden dimension in MLPs (default: 4096)
         T: softmax temperature (default: 1.0)
         """
-        super(MoCo_CAST, self).__init__(base_encoder, dim, mlp_dim, T)
+        super(MoCo_SupPix, self).__init__(base_encoder, dim, mlp_dim, T)
 
     def contrastive_loss(self, q, k, T):
         # normalize

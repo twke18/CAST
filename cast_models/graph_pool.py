@@ -166,12 +166,6 @@ class GraphPooling(nn.Module):
         logits = logits * 5
         assignments = torch.softmax(logits, dim=-1)
 
-        # Average pooling tokens within each clusters
-        normalizer = torch.einsum('bij,bjk->bik', assignments.transpose(1, 2),
-                                  torch.ones((bs, sl, 1), dtype=src.dtype, device=src.device))
-        centroids = torch.einsum('bij,bjk->bik', assignments.transpose(1, 2), src)
-        centroids /= normalizer
-
         # Average pooling within clusters.
         fc1_cls_token_src = self.fc1(torch.cat([cls_token, src], dim=1))
         fc1_cls_token, fc1_src = fc1_cls_token_src[:, :1], fc1_cls_token_src[:, 1:]
