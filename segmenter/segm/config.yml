@@ -16,6 +16,30 @@ model:
     n_layers: 12
     normalization: deit
     distilled: true
+  deit_conv_small_patch16_224:
+    image_size: 224
+    patch_size: 16
+    d_model: 384
+    n_heads: 12
+    n_layers: 11
+    normalization: deit
+    distilled: False
+  deit_cast_small:
+    image_size: 224
+    patch_size: 16
+    d_model: 384
+    n_heads: 12
+    n_layers: 11
+    normalization: deit
+    distilled: False
+  deit_cast_small_deep:
+    image_size: 224
+    patch_size: 16
+    d_model: 384
+    n_heads: 12
+    n_layers: 11
+    normalization: deit
+    distilled: False
   deit_base_distilled_patch16_224:
     image_size: 224
     patch_size: 16

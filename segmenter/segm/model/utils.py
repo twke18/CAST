@@ -3,10 +3,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 from collections import defaultdict
+import numpy as np
 
 from timm.models.layers import trunc_normal_
 
 import segm.utils.torch as ptu
+from segm.data.utils import generate_superpixels, rgb_denormalize, label2color
 
 
 def init_weights(m):
@@ -171,6 +173,49 @@ def inference(
         with torch.no_grad():
             for i in range(0, B, WB):
                 seg_maps[i : i + WB] = model.forward(crops[i : i + WB])
+        windows["seg_maps"] = seg_maps
+        im_seg_map = merge_windows(windows, window_size, ori_shape)
+        seg_map += im_seg_map
+    seg_map /= len(ims)
+    return seg_map
+
+
+def inference_with_superpixels(
+    model,
+    ims,
+    ims_metas,
+    ori_shape,
+    window_size,
+    window_stride,
+    batch_size,
+    normalization,
+):
+    C = model.n_cls
+    seg_map = torch.zeros((C, ori_shape[0], ori_shape[1]), device=ptu.device)
+    for im, im_metas in zip(ims, ims_metas):
+        im = im.to(ptu.device)
+        im = resize(im, window_size)
+        flip = im_metas["flip"]
+        windows = sliding_window(im, flip, window_size, window_stride)
+        crops = torch.stack(windows.pop("crop"))[:, 0]
+
+        denorm_crops = rgb_denormalize(
+            crops.cpu(), normalization, inplace=False
+        )
+        superpix_crops = []
+        for i in range(denorm_crops.shape[0]):
+            cur_crop = denorm_crops[i].permute(1, 2, 0).data.cpu().numpy().astype(np.uint8)
+            n_segments = int(cur_crop.shape[0] * cur_crop.shape[1] / 16**2)
+            superpix = generate_superpixels(cur_crop, n_segments)
+            superpix_crops.append(torch.tensor(superpix).long())
+        superpix_crops = torch.stack(superpix_crops, 0).to(ptu.device)
+
+        B = len(crops)
+        WB = batch_size
+        seg_maps = torch.zeros((B, C, window_size, window_size), device=im.device)
+        with torch.no_grad():
+            for i in range(0, B, WB):
+                seg_maps[i : i + WB] = model.forward(crops[i : i + WB], superpix_crops[i : i + WB])
         windows["seg_maps"] = seg_maps
         im_seg_map = merge_windows(windows, window_size, ori_shape)
         seg_map += im_seg_map

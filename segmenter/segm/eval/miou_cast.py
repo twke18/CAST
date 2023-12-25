@@ -14,11 +14,11 @@ from segm.utils import distributed
 from segm.utils.logger import MetricLogger
 import segm.utils.torch as ptu
 
-from segm.model.factory import load_model
+from segm.model.factory import load_superpix_model
 from segm.data.factory import create_dataset
 from segm.metrics import gather_data, compute_metrics
 
-from segm.model.utils import inference
+from segm.model.utils import inference_with_superpixels
 from segm.data.utils import seg_to_rgb, rgb_denormalize, IGNORE_LABEL
 from segm import config
 
@@ -52,16 +52,13 @@ def save_im(save_dir, save_name, im, seg_pred, seg_gt, colors, blend, normalizat
         for im, im_dir in zip(
             ims, (save_dir / "input", save_dir / "pred", save_dir / "gt", save_dir / "gt_gray", save_dir / "pred_gray"),
         ):
-            if im.ndim == 2:
-                pil_out = Image.fromarray(im, mode="L")
-            else:
-                pil_out = Image.fromarray(im, mode="RGB")
+            pil_out = Image.fromarray(im)
             im_dir.mkdir(exist_ok=True)
             pil_out.save(im_dir / save_name.replace(".jpg", ".png"))
 
 
 def process_batch(
-    model, batch, window_size, window_stride, window_batch_size,
+    model, batch, window_size, window_stride, window_batch_size, normalization
 ):
     ims = batch["im"]
     ims_metas = batch["im_metas"]
@@ -72,7 +69,7 @@ def process_batch(
     model_without_ddp = model
     if ptu.distributed:
         model_without_ddp = model.module
-    seg_pred = inference(
+    seg_pred = inference_with_superpixels(
         model_without_ddp,
         ims,
         ims_metas,
@@ -80,6 +77,7 @@ def process_batch(
         window_size,
         window_stride,
         window_batch_size,
+        normalization,
     )
     seg_pred = seg_pred.argmax(0)
     im = F.interpolate(ims[-1], ori_shape, mode="bilinear")
@@ -118,7 +116,7 @@ def eval_dataset(
     for batch in logger.log_every(db, print_freq, header):
         colors = batch["colors"]
         filename, im, seg_pred = process_batch(
-            model, batch, window_size, window_stride, window_batch_size,
+            model, batch, window_size, window_stride, window_batch_size, normalization
         )
         ims[filename] = im
         seg_pred_maps[filename] = seg_pred
@@ -219,7 +217,7 @@ def main(
     ptu.set_gpu_mode(True)
     distributed.init_process()
 
-    model, variant = load_model(model_path)
+    model, variant = load_superpix_model(model_path)
     patch_size = model.patch_size
     model.eval()
     model.to(ptu.device)

@@ -114,3 +114,44 @@ class MaskTransformer(nn.Module):
                 x = blk(x)
             else:
                 return blk(x, return_attention=True)
+
+
+class SuperpixMaskTransformer(MaskTransformer):
+    """Same as MaskTransformer but we don't rearrange output
+    to image grid, scatter to superpixel instead.
+    """
+    def forward(self, x, superpix, im_size):
+        H, W = im_size
+
+        x = self.proj_dec(x)
+        cls_emb = self.cls_emb.expand(x.size(0), -1, -1)
+        x = torch.cat((x, cls_emb), 1)
+        for blk in self.blocks:
+            x = blk(x)
+        x = self.decoder_norm(x)
+
+        patches, cls_seg_feat = x[:, : -self.n_cls], x[:, -self.n_cls :]
+        patches = patches @ self.proj_patch
+        cls_seg_feat = cls_seg_feat @ self.proj_classes
+
+        patches = patches / patches.norm(dim=-1, keepdim=True)
+        cls_seg_feat = cls_seg_feat / cls_seg_feat.norm(dim=-1, keepdim=True)
+
+        masks = patches @ cls_seg_feat.transpose(1, 2)
+        masks = self.mask_norm(masks)
+
+        # Output masks
+        _superpix = superpix
+        superpix = F.interpolate(superpix.unsqueeze(1),
+                                 (H, W),
+                                 mode='nearest').squeeze(1).long()
+
+        B, _, C = masks.shape
+        masks = torch.gather(
+            masks,
+            1,
+            superpix.view(B, -1, 1).expand(-1, -1, C))
+        masks = masks.permute(0, 2, 1).reshape(B, C, H, W)
+
+        return masks
+

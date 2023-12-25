@@ -11,10 +11,12 @@ from timm.models.registry import register_model
 from timm.models.vision_transformer import _create_vision_transformer
 
 from segm.model.vit import VisionTransformer
+import segm.model.vits_deit as vits_deit
+import cast_models.cast_seg_deit as cast_deit
 from segm.model.utils import checkpoint_filter_fn
 from segm.model.decoder import DecoderLinear
-from segm.model.decoder import MaskTransformer
-from segm.model.segmenter import Segmenter
+from segm.model.decoder import MaskTransformer, SuperpixMaskTransformer
+from segm.model.segmenter import Segmenter, SuperpixSegmenter
 import segm.utils.torch as ptu
 
 
@@ -78,6 +80,42 @@ def create_vit(model_cfg):
     return model
 
 
+def create_vit_deit(model_cfg):
+    assert model_cfg["image_size"][0] == model_cfg["image_size"][1]
+    backbone = model_cfg['backbone']
+    model = vits_deit.__dict__[backbone]()
+
+    if 'pretrained' in model_cfg.keys():
+        pretrained = model_cfg["pretrained"]
+        print(f'Load from pretrained weights: {pretrained}')
+        checkpoint = torch.load(pretrined)
+
+        state_dict = checkpoint['model']
+
+        msg = model.load_state_dict(state_dict, strict=False)
+        print(msg)
+
+    return model
+
+
+def create_cast_deit(model_cfg):
+    assert model_cfg["image_size"][0] == model_cfg["image_size"][1]
+    backbone = model_cfg['backbone'].replace('deit_', '')
+    model = cast_deit.__dict__[backbone]()
+
+    if 'pretrained' in model_cfg.keys():
+        pretrained = model_cfg["pretrained"]
+        print(f'Load from pretrained weights: {pretrained}')
+        checkpoint = torch.load(pretrined)
+
+        state_dict = checkpoint['model']
+
+        msg = model.load_state_dict(state_dict, strict=False)
+        print(msg)
+
+    return model
+
+
 def create_decoder(encoder, decoder_cfg):
     decoder_cfg = decoder_cfg.copy()
     name = decoder_cfg.pop("name")
@@ -103,9 +141,39 @@ def create_segmenter(model_cfg):
     decoder_cfg = model_cfg.pop("decoder")
     decoder_cfg["n_cls"] = model_cfg["n_cls"]
 
-    encoder = create_vit(model_cfg)
+    encoder = create_vit_deit(model_cfg)
     decoder = create_decoder(encoder, decoder_cfg)
     model = Segmenter(encoder, decoder, n_cls=model_cfg["n_cls"])
+
+    return model
+
+
+def create_superpix_decoder(encoder, decoder_cfg):
+    decoder_cfg = decoder_cfg.copy()
+    name = decoder_cfg.pop("name")
+    decoder_cfg["d_encoder"] = encoder.d_model
+    decoder_cfg["patch_size"] = encoder.patch_size
+
+    if name == "mask_transformer":
+        dim = encoder.d_model
+        n_heads = dim // 64
+        decoder_cfg["n_heads"] = n_heads
+        decoder_cfg["d_model"] = dim
+        decoder_cfg["d_ff"] = 4 * dim
+        decoder = SuperpixMaskTransformer(**decoder_cfg)
+    else:
+        raise ValueError(f"Unknown decoder: {name}")
+    return decoder
+
+
+def create_superpix_segmenter(model_cfg):
+    model_cfg = model_cfg.copy()
+    decoder_cfg = model_cfg.pop("decoder")
+    decoder_cfg["n_cls"] = model_cfg["n_cls"]
+
+    encoder = create_cast_deit(model_cfg)
+    decoder = create_superpix_decoder(encoder, decoder_cfg)
+    model = SuperpixSegmenter(encoder, decoder, n_cls=model_cfg["n_cls"])
 
     return model
 
@@ -123,3 +191,44 @@ def load_model(model_path):
     model.load_state_dict(checkpoint, strict=True)
 
     return model, variant
+
+
+def load_superpix_model(model_path):
+    variant_path = Path(model_path).parent / "variant.yml"
+    with open(variant_path, "r") as f:
+        variant = yaml.load(f, Loader=yaml.FullLoader)
+    net_kwargs = variant["net_kwargs"]
+
+    model = create_superpix_segmenter(net_kwargs)
+    data = torch.load(model_path, map_location=ptu.device)
+    checkpoint = data["model"]
+
+    model.load_state_dict(checkpoint, strict=True)
+
+    return model, variant
+
+
+def interpolate_pos_embed(model, checkpoint_model):
+  for k in checkpoint_model:
+    if 'pos_embed' in k:
+      pos_embed_checkpoint = checkpoint_model[k]
+      embedding_size = pos_embed_checkpoint.shape[-1]
+      num_patches = model.patch_embed.num_patches
+      num_extra_tokens = model.pos_embed.shape[-2] - num_patches
+      # height (== width) for the checkpoint position embedding
+      orig_size = int((pos_embed_checkpoint.shape[-2] - num_extra_tokens) ** 0.5)
+      # height (== width) for the new position embedding
+      new_size = int(num_patches ** 0.5)
+      # class_token and dist_token are kept unchanged
+      if orig_size != new_size:
+        print("Position interpolate from %dx%d to %dx%d, with key name %s" % (orig_size, orig_size, new_size, new_size, k))
+        extra_tokens = pos_embed_checkpoint[:, :num_extra_tokens]
+        # only the position tokens are interpolated
+        pos_tokens = pos_embed_checkpoint[:, num_extra_tokens:]
+        pos_tokens = pos_tokens.reshape(-1, orig_size, orig_size, embedding_size).permute(0, 3, 1, 2)
+        pos_tokens = torch.nn.functional.interpolate(
+            pos_tokens, size=(new_size, new_size), mode='bicubic', align_corners=False)
+        pos_tokens = pos_tokens.permute(0, 2, 3, 1).flatten(1, 2)
+        new_pos_embed = torch.cat((extra_tokens, pos_tokens), dim=1)
+        checkpoint_model[k] = new_pos_embed
+

@@ -58,3 +58,25 @@ class Segmenter(nn.Module):
         x = x[:, num_extra_tokens:]
 
         return self.decoder.get_attention_map(x, layer_id)
+
+
+class SuperpixSegmenter(Segmenter):
+
+    def forward(self, im, superpix):
+        H_ori, W_ori = im.size(2), im.size(3)
+        im = padding(im, self.patch_size)
+        H, W = im.size(2), im.size(3)
+
+        x = self.encoder(im, superpix)
+
+        # remove CLS/DIST tokens for decoding
+        num_extra_tokens = 1 + self.encoder.distilled
+        x = x[:, num_extra_tokens:]
+
+        masks = self.decoder(x, superpix, (H, W))
+
+        masks = F.interpolate(masks, size=(H, W), mode="bilinear")
+        masks = unpadding(masks, (H_ori, W_ori))
+
+        return masks
+
