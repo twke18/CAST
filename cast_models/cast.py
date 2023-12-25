@@ -12,11 +12,11 @@ from functools import partial, reduce
 from operator import mul
 
 from timm.models.vision_transformer import VisionTransformer, Block, _cfg
-from timm.models.layers.helpers import to_2tuple
 from timm.models.layers import PatchEmbed
 
 from cast_models.utils import segment_mean_nd
 from cast_models.graph_pool import GraphPooling
+from cast_models.modules import Pooling, ConvStem
 
 __all__ = [
     'cast_small',
@@ -24,45 +24,6 @@ __all__ = [
     'cast_base',
     'cast_base_deep',
 ]
-
-
-class Pooling(nn.Module):
-
-    def __init__(self, pool_block):
-        super(Pooling, self).__init__()
-        self.pool_block = pool_block
-
-    def forward(self, cls_token, x, padding_mask=None):
-        """Perform Pooling module.
-        
-        Args:
-            cls_token: A `float` tensor of shape `[batch_size, 1, channels]`
-            x: A `float` tensor of shape `[batch_size, num_nodes, channels]`
-            padding_mask: A `binary` tensor of shape `[batch_size, num_nodes]`,
-                         where `True` indicates the entry is padded; otherwise,
-                         should be `False`
-
-        Returns:
-            cls_token: A `float` tensor of shape
-                `[batch_size, 1, channels]`
-            pool_logit: A `float` tensor of shape
-                `[batch_size, num_nodes, num_pooled_nodes]`
-            centroid: A `float` tensor of shape
-                `[batch_size, num_pooled_nodes, channels]`
-            pool_padding_mask: A `binary` tensor of shape
-                `[batch_size, num_pooled_nodes]`
-            sampled_x_inds: A `integer` tensor of shape
-                `[batch_size, num_pooled_nodes]`
-        """
-        cls_token, centroid, pool_logit, sampled_x_inds = self.pool_block(
-            cls_token=cls_token, src=x, mask=padding_mask)
-
-        pool_padding_mask = torch.zeros(
-            (pool_logit.shape[0], pool_logit.shape[-1]),
-            dtype=torch.bool,
-            device=pool_logit.device)
-
-        return cls_token, pool_logit, centroid, pool_padding_mask, sampled_x_inds
 
 
 class CAST(VisionTransformer):
@@ -79,24 +40,28 @@ class CAST(VisionTransformer):
 
         # ----------------------------------------------------------------------
         # Encoder specifics
-        del self.blocks # overwrite with new blocks
-        dpr = [x.item() for x in torch.linspace(0, 0, sum(depths))]
-        dpr = dpr[::-1]
+        # del self.blocks # overwrite with new blocks
+        # dpr = [x.item() for x in torch.linspace(0, 0, sum(depths))]
+        # dpr = dpr[::-1]
+        cumsum_depth = [0]
+        for d in depths:
+            cumsum_depth.append(d + cumsum_depth[-1])
 
         blocks = []
         pools = []
         for ind, depth in enumerate(depths):
 
             # Build Attention Blocks
-            block = []
-            for _ in range(depth):
-                block.append(Block(dim=kwargs['embed_dim'],
-                                   num_heads=kwargs['num_heads'],
-                                   mlp_ratio=kwargs['mlp_ratio'],
-                                   qkv_bias=kwargs['qkv_bias'],
-                                   drop_path=dpr.pop(),
-                                   norm_layer=kwargs['norm_layer']))
-            blocks.append(nn.Sequential(*block))
+            blocks.append(self.blocks[cumsum_depth[ind]:cumsum_depth[ind+1]])
+            # block = []
+            # for _ in range(depth):
+            #     block.append(Block(dim=kwargs['embed_dim'],
+            #                        num_heads=kwargs['num_heads'],
+            #                        mlp_ratio=kwargs['mlp_ratio'],
+            #                        qkv_bias=kwargs['qkv_bias'],
+            #                        drop_path=dpr.pop(),
+            #                        norm_layer=kwargs['norm_layer']))
+            # blocks.append(nn.Sequential(*block))
 
             # Build Pooling layers
             pool = Pooling(
@@ -272,52 +237,6 @@ class CAST(VisionTransformer):
         intermediates = self.forward_features(x, y)
         x = self.head(intermediates['out4'])
 
-        return x
-
-
-class ConvStem(nn.Module):
-    """ 
-    ConvStem, from Early Convolutions Help Transformers See Better, Tete et al. https://arxiv.org/abs/2106.14881
-    """
-    def __init__(self, img_size=224, patch_size=8, in_chans=3, embed_dim=768, norm_layer=None, flatten=False):
-        super().__init__()
-
-        assert patch_size == 8, 'ConvStem only supports patch size of 8'
-        assert embed_dim % 8 == 0, 'Embed dimension must be divisible by 2 for ConvStem'
-
-        img_size = to_2tuple(img_size)
-        patch_size = to_2tuple(patch_size)
-        self.img_size = img_size
-        self.patch_size = patch_size
-        self.grid_size = (img_size[0] // patch_size[0], img_size[1] // patch_size[1])
-        self.num_patches = self.grid_size[0] * self.grid_size[1]
-        self.flatten = flatten
-
-        # build stem, similar to the design in https://arxiv.org/abs/2106.14881
-        stem = []
-        input_dim, output_dim = 3, embed_dim // 8
-        for l in range(4):
-            stride = 2 if l < 3 else 1
-            stem.append(nn.Conv2d(input_dim, output_dim, kernel_size=3, stride=stride, padding=1, bias=False))
-            stem.append(nn.BatchNorm2d(output_dim))
-            stem.append(nn.ReLU(inplace=True))
-            input_dim = output_dim
-            output_dim *= 2
-        stem.append(nn.Conv2d(input_dim, embed_dim, kernel_size=1))
-        self.proj = nn.Sequential(*stem)
-
-        self.norm = norm_layer(embed_dim) if norm_layer else nn.Identity()
-
-    def forward(self, x):
-        B, C, H, W = x.shape
-        assert H == self.img_size[0] and W == self.img_size[1], \
-            f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
-        x = self.proj(x)
-        if self.flatten:
-            x = x.flatten(2).transpose(1, 2)  # BCHW -> BNC
-        else:
-            x = x.permute(0, 2, 3, 1) # BxCxHxW -> BxHxWXC
-        x = self.norm(x)
         return x
 
 

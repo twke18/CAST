@@ -1,4 +1,4 @@
-"""Define CAST model for classification following DeiT convention.
+"""Define CAST model for segmentation following DeiT convention.
 
 Modified from:
     https://github.com/facebookresearch/moco-v3/blob/main/vits.py
@@ -19,7 +19,7 @@ from timm.models.layers import trunc_normal_
 
 from cast_models.utils import segment_mean_nd
 from cast_models.graph_pool import GraphPooling
-from cast_models.modules import Pooling, ConvStem
+from cast_models.modules import Pooling, ConvStem, BlockFusion
 
 __all__ = [
     'cast_small',
@@ -32,10 +32,14 @@ __all__ = [
 class CAST(VisionTransformer):
     def __init__(self, *args, **kwargs):
         depths = kwargs['depth']
-        # These entries do not exist in timm.VisionTransformer.
+        # These entries do not exist in timm.VisionTransformer
         num_clusters = kwargs.pop('num_clusters', [64, 32, 16, 8])
         kwargs['depth'] = sum(kwargs['depth'])
         super().__init__(**kwargs)
+
+        self.d_model = kwargs['embed_dim']
+        self.patch_size = kwargs['patch_size']
+        self.distilled = False
 
         # Do not tackle dist_token.
         assert self.dist_token is None, 'dist_token is not None.'
@@ -64,20 +68,15 @@ class CAST(VisionTransformer):
                     num_clusters=num_clusters[ind],
                     d_model=kwargs['embed_dim'],
                     l2_normalize_for_fps=False))
-            # Last graph pooling is not needed
-            if ind == len(depths) - 1:
-                for param in pool.pool_block.fc1.parameters():
-                    param.requires_grad = False
-                for param in pool.pool_block.fc2.parameters():
-                    param.requires_grad = False
-                for param in pool.pool_block.centroid_fc.parameters():
-                    param.requires_grad = False
             pools.append(pool)
 
         self.blocks1, self.pool1 = blocks[0], pools[0]
         self.blocks2, self.pool2 = blocks[1], pools[1]
         self.blocks3, self.pool3 = blocks[2], pools[2]
         self.blocks4, self.pool4 = blocks[3], pools[3]
+
+        # The output block specifics.
+        self.block_fusion = BlockFusion(kwargs['embed_dim'], True, True)
         # --------------------------------------------------------------------------
 
 
@@ -97,9 +96,9 @@ class CAST(VisionTransformer):
 
         # Generate output by cls_token
         if norm_block is not None:
-            out = norm_block(cls_x)[:, 0]
+            out = norm_block(cls_x)
         else:
-            out = cls_x[:, 0]
+            out = cls_x
 
         return (x, cls_token, pool_logit, centroid,
                 pool_pad_mask, pool_inds, out)
@@ -107,20 +106,30 @@ class CAST(VisionTransformer):
     def forward_features(self, x, y):
         x = self.patch_embed(x) # NxHxWxC
         N, H, W, C = x.shape
+        yH, yW = y.shape[-2:]
 
-        # Collect features within each segment
-        y = y.unsqueeze(1).float()
-        y = F.interpolate(y, x.shape[1:3], mode='nearest')
-        y = y.squeeze(1).long()
+        # Collect features within each segment.
+        x = F.interpolate(x.permute(0, 3, 1, 2),
+                          size=(yH, yW),
+                          mode='bilinear').permute(0, 2, 3, 1)
         x = segment_mean_nd(x, y)
 
-        # Create padding mask
-        ones = torch.ones((N, H, W, 1), dtype=x.dtype, device=x.device)
+
+        # Create padding mask.
+        ones = torch.ones((N, yH, yW, 1), dtype=x.dtype, device=x.device)
         avg_ones = segment_mean_nd(ones, y).squeeze(-1)
         x_padding_mask = avg_ones <= 0.5
 
-        # Collect positional encodings within each segment
-        pos_embed = self.pos_embed[:, 1:].view(1, H, W, C).expand(N, -1, -1, -1)
+        # Collect positional encodings within each segment.
+        pos_embed = self.pos_embed[:, 1:]
+        pos_embed = pos_embed.view(1,
+                                   self.patch_embed.grid_size[0],
+                                   self.patch_embed.grid_size[1],
+                                   self.embed_dim)
+        pos_embed = F.interpolate(pos_embed.permute(0, 3, 1, 2),
+                                  size=(yH, yW), mode='bicubic', align_corners=False)
+        pos_embed = pos_embed.permute(0, 2, 3, 1).contiguous()
+        pos_embed = pos_embed.expand(N, -1, -1, -1)
         pos_embed = segment_mean_nd(pos_embed, y)
 
         # Add positional encodings
@@ -153,13 +162,20 @@ class CAST(VisionTransformer):
          pool_padding_mask4, pool_inds4, out4) = self._block_operations(
             centroid3, cls_token3, pool_padding_mask3,
             self.blocks4, self.pool4, self.norm)
-        out4 = self.pre_logits(out4)
 
-        return out4
+        out_block, out_cls_token = self.block_fusion(
+            block1, block2, block3, block4,
+            cls_token1, cls_token2, cls_token3, cls_token4,
+            pool_logit1, pool_logit2, pool_logit3)
+
+        out = torch.cat([out_cls_token, out_block], dim=1)
+        out = self.pre_logits(out)
+
+        return out
 
     def forward(self, x, y):
+        y = y.long()
         x = self.forward_features(x, y)
-        x = self.head(x)
 
         return x
 
@@ -168,7 +184,7 @@ class CAST(VisionTransformer):
 def cast_small(pretrained=False, **kwargs):
     # minus one ViT block
     model = CAST(
-        patch_size=8, embed_dim=384, num_clusters=[64, 32, 16, 8],
+        patch_size=8, embed_dim=384, num_clusters=[320, 160, 80, 40],
         depth=[3, 3, 3, 2], num_heads=12, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6), embed_layer=ConvStem, **kwargs)
     model.default_cfg = _cfg()
@@ -179,7 +195,7 @@ def cast_small(pretrained=False, **kwargs):
 def cast_small_deep(pretrained=False, **kwargs):
     # minus one ViT block
     model = CAST(
-        patch_size=8, embed_dim=384, num_clusters=[64, 32, 16, 8],
+        patch_size=8, embed_dim=384, num_clusters=[320, 160, 80, 40],
         depth=[6, 3, 3, 3], num_heads=12, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6), embed_layer=ConvStem, **kwargs)
     model.default_cfg = _cfg()
@@ -190,7 +206,7 @@ def cast_small_deep(pretrained=False, **kwargs):
 def cast_base(pretrained=False, **kwargs):
     # minus one ViT block
     model = CAST(
-        patch_size=8, embed_dim=768, num_clusters=[64, 32, 16, 8],
+        patch_size=8, embed_dim=768, num_clusters=[320, 160, 80, 40],
         depth=[3, 3, 3, 2], num_heads=12, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6), embed_layer=ConvStem, **kwargs)
     model.default_cfg = _cfg()
@@ -201,7 +217,7 @@ def cast_base(pretrained=False, **kwargs):
 def cast_base_deep(pretrained=False, **kwargs):
     # minus one ViT block
     model = CAST(
-        patch_size=8, embed_dim=768, num_clusters=[64, 32, 16, 8],
+        patch_size=8, embed_dim=768, num_clusters=[320, 160, 80, 40],
         depth=[6, 3, 3, 3], num_heads=12, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6), embed_layer=ConvStem, **kwargs)
     model.default_cfg = _cfg()
