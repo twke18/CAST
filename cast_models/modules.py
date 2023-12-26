@@ -93,23 +93,23 @@ class ConvStem(nn.Module):
 
 
 class _BatchNorm1d(nn.Module):
-  """This class is specific for 3D inputs of shape
-  [length, batch_size, channels].
-  """
-  def __init__(self, num_features, eps=1e-5, momentum=0.1,
-               affine=True, track_running_stats=True):
-    super(_BatchNorm1d, self).__init__()
-    self.norm = nn.BatchNorm1d(num_features=num_features,
-                               eps=eps,
-                               momentum=momentum,
-                               affine=affine,
-                               track_running_stats=track_running_stats)
+    """This class is specific for 3D inputs of shape
+    [length, batch_size, channels].
+    """
+    def __init__(self, num_features, eps=1e-5, momentum=0.1,
+                 affine=True, track_running_stats=True):
+        super(_BatchNorm1d, self).__init__()
+        self.norm = nn.BatchNorm1d(num_features=num_features,
+                                   eps=eps,
+                                   momentum=momentum,
+                                   affine=affine,
+                                   track_running_stats=track_running_stats)
 
-  def forward(self, x):
-    x_t = x.transpose(1, 2)
-    x_t = self.norm(x_t)
-    x_t = x_t.transpose(1, 2)
-    return x_t
+    def forward(self, x):
+        x_t = x.transpose(1, 2)
+        x_t = self.norm(x_t)
+        x_t = x_t.transpose(1, 2)
+        return x_t
 
 
 class BlockFusion(nn.Module):

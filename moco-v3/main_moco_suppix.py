@@ -34,10 +34,12 @@ import moco.optimizer
 import suppix_utils.datasets_seeds as datasets
 
 import cast_models.cast
+import cast_models.cast_seg
 import models.tome_suppix
 
 
 model_names = ['cast_small', 'cast_small_deep', 'cast_base', 'cast_base_deep',
+               'cast_seg_small_pretrain', 'cast_seg_base_pretrain',
                'tome_small', 'tome_base']
 
 parser = argparse.ArgumentParser(description='MoCo ImageNet Pre-Training')
@@ -177,8 +179,13 @@ def main_worker(gpu, ngpus_per_node, args):
     # create model
     print("=> creating model '{}'".format(args.arch))
     if 'cast' in args.arch:
+        if 'seg' in args.arch:
+            arch = args.arch.replace('cast_seg', 'cast')
+            model_cls = cast_models.cast_seg.__dict__[arch]
+        else:
+            model_cls = cast_models.cast.__dict__[args.arch]
         model = suppix_utils.builder.MoCo_SupPix(
-            partial(cast_models.cast.__dict__[args.arch], stop_grad_conv1=args.stop_grad_conv1),
+            partial(model_cls, stop_grad_conv1=args.stop_grad_conv1),
             args.moco_dim, args.moco_mlp_dim, args.moco_t)
     elif 'tome' in args.arch:
         model = suppix_utils.builder.MoCo_SupPix(

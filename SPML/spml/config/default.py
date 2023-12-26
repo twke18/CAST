@@ -26,6 +26,8 @@ config.network.label_divisor = 255
 # Spherical KMeans.
 config.network.kmeans_iterations = 10
 config.network.kmeans_num_clusters = [5, 5]
+# CAST.
+config.network.num_superpixels = 1024
 
 ## Parameters for dataset.
 config.dataset = edict()

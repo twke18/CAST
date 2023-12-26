@@ -193,6 +193,9 @@ class CAST(VisionTransformer):
         # Add positional encodings
         x = self.pos_drop(x + pos_embed)
 
+        # Intermediate results
+        intermediates = {}
+
         # Add class token.
         cls_token = self.cls_token.expand(x.shape[0], -1, -1)
         cls_token = cls_token + self.pe_token.expand(x.shape[0], -1, -1)
@@ -203,11 +206,23 @@ class CAST(VisionTransformer):
             x, cls_token, x_padding_mask,
             self.blocks1, self.pool1, None)
 
+        intermediates1 = {
+            'logit1': pool_logit1, 'centroid1': centroid1, 'block1': block1,
+            'padding_mask1': x_padding_mask, 'sampled_inds1': pool_inds1,
+        }
+        intermediates.update(intermediates1)
+
         # Block2
         (block2, cls_token2, pool_logit2, centroid2,
          pool_padding_mask2, pool_inds2, out2) = self._block_operations(
             centroid1, cls_token1, pool_padding_mask1,
             self.blocks2, self.pool2, None)
+
+        intermediates2 = {
+            'logit2': pool_logit2, 'centroid2': centroid2, 'block2': block2,
+            'padding_mask2': pool_padding_mask1, 'sampled_inds2': pool_inds2,
+        }
+        intermediates.update(intermediates2)
 
         # Block3
         (block3, cls_token3, pool_logit3, centroid3,
@@ -215,11 +230,23 @@ class CAST(VisionTransformer):
             centroid2, cls_token2, pool_padding_mask2,
             self.blocks3, self.pool3, None)
 
+        intermediates3 = {
+            'logit3': pool_logit3, 'centroid3': centroid3, 'block3': block3,
+            'padding_mask3': pool_padding_mask2, 'sampled_inds3': pool_inds3,
+        }
+        intermediates.update(intermediates3)
+
         # Block4
         (block4, cls_token4, pool_logit4, centroid4,
          pool_padding_mask4, pool_inds4, out4) = self._block_operations(
             centroid3, cls_token3, pool_padding_mask3,
             self.blocks4, self.pool4, None)
+
+        intermediates4 = {
+            'logit4': pool_logit4, 'centroid4': centroid4, 'block4': block4,
+            'padding_mask4': pool_padding_mask3, 'sampled_inds4': pool_inds4,
+        }
+        intermediates.update(intermediates4)
 
         out_block, out_cls_token = self.block_fusion(
             block1, block2, block3, block4,
@@ -232,10 +259,10 @@ class CAST(VisionTransformer):
             out = out_block
         out = self.pre_logits(out)
 
-        return out
+        return out, intermediates
 
-    def forward(self, x, y):
-        x = self.forward_features(x, y)
+    def forward(self, x, y, return_intermediate=False):
+        x, intermediates = self.forward_features(x, y)
         if self.model_stage == 'pretrain':
             x = self.head(x)
         else:
@@ -243,7 +270,10 @@ class CAST(VisionTransformer):
             x = self.head(x.flatten(0, 1))
             x = x.unflatten(0, (bs, ns))
 
-        return x
+        if return_intermediate:
+            return x, intermediates
+        else:
+            return x
 
 
 def cast_small_pretrain(pretrained=True, **kwargs):

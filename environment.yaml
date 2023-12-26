@@ -13,6 +13,14 @@ dependencies:
   - torchvision=0.15.0
   - pip:
     - opencv-contrib-python
-    - timm==0.4.9
+    - timm==0.4.12
     - setuptools==58.0.4
     - tensorboard
+    - hostlist
+    - scikit-image
+    - mmcv==1.3.8
+    - mmsegmentation==0.14.1
+    - einops
+    - easydict==1.9
+    - pyyaml==5.3
+    - tensorboardX

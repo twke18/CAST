@@ -60,7 +60,7 @@ def prepare_datas_and_labels_mgpu(data_iterator, gpu_ids):
   """
   input_batch, label_batch = [], []
   for gpu_id in gpu_ids:
-    data, label, index = data_iterator.next()
+    data, label, index = next(data_iterator)
     for k, v in data.items():
       data[k] = (v if not torch.is_tensor(v)
                   else v.pin_memory().to(gpu_id, non_blocking=True))

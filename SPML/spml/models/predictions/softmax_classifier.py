@@ -14,16 +14,13 @@ class SoftmaxClassifier(nn.Module):
     super(SoftmaxClassifier, self).__init__()
     self.semantic_classifier = nn.Sequential(
         nn.Conv2d(config.network.embedding_dim,
-          config.network.embedding_dim*2,
-          #kernel_size=1,
-          kernel_size=3,
-          padding=1,
+          config.network.embedding_dim,
+          kernel_size=1,
           stride=1,
           bias=False),
-        nn.BatchNorm2d(config.network.embedding_dim*2),
+        nn.BatchNorm2d(config.network.embedding_dim),
         nn.ReLU(inplace=True),
-        nn.Dropout(p=0.65),
-        nn.Conv2d(config.network.embedding_dim*2,
+        nn.Conv2d(config.network.embedding_dim,
           config.dataset.num_classes,
           kernel_size=1,
           stride=1,
@@ -50,8 +47,6 @@ class SoftmaxClassifier(nn.Module):
 
     # Predict semantic labels.
     semantic_embeddings = datas['embedding']
-    semantic_embeddings = (
-      semantic_embeddings / torch.norm(semantic_embeddings, dim=1, keepdim=True))
     semantic_logits = self.semantic_classifier(semantic_embeddings)
 
     # Compute semantic loss.
@@ -111,7 +106,25 @@ class SoftmaxClassifier(nn.Module):
     return ret
 
 
+class LinearClassifier(SoftmaxClassifier):
+
+  def __init__(self, config):
+    super(LinearClassifier, self).__init__(config=config)
+    self.semantic_classifier = nn.Sequential(
+        nn.Conv2d(config.network.embedding_dim,
+          config.dataset.num_classes,
+          kernel_size=1,
+          stride=1,
+          bias=True))
+
+
 def softmax_classifier(config):
   """Pixel semantic segmentation model.
   """
   return SoftmaxClassifier(config)
+
+
+def linear_classifier(config):
+  """Pixel semantic segmentation model.
+  """
+  return LinearClassifier(config)

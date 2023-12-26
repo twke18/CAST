@@ -1,9 +1,11 @@
 #!/usr/bin/bash
-SNAPSHOTS=snapshots/coco/cast_small
+SNAPSHOTS=snapshots/moco/coco/cast_small
 mkdir -p ${SNAPSHOTS}
 
-python -W ignore main_moco_cast.py \
-    -a cast_small -b 256 \
+export PYTHONPATH=moco-v3/:$PYTHONPATH
+
+python -W ignore moco-v3/main_moco_suppix.py \
+    -a cast_seg_small_pretrain -b 256 \
     --optimizer=adamw --lr=1.5e-4 --weight-decay=.1 \
     --epochs=400 --warmup-epochs=40 \
     --stop-grad-conv1 --moco-m-cos --moco-t=.2 \

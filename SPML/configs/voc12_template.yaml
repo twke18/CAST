@@ -8,7 +8,7 @@ dataset:
   data_dir: "DATA_ROOT"
   train_data_list: "TRAIN_DATA_LIST"
   test_data_list: "TEST_DATA_LIST"
-  color_map_path: "misc/colormapvoc.mat"
+  color_map_path: "SPML/misc/colormapvoc.mat"
 
 network:
   pretrained: "PRETRAINED"
