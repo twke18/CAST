@@ -14,7 +14,7 @@ Create a conda environment with the following command:
 > conda activate cast
 
 # install dgl (https://www.dgl.ai/pages/start.html)
-> pip install  dgl -f https://data.dgl.ai/wheels/cu118/repo.html
+> pip install  dgl -f https://data.dgl.ai/wheels/cu116/repo.html
 > pip install  dglgo -f https://data.dgl.ai/wheels-test/repo.html
 
 # install

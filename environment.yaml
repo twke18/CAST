@@ -8,9 +8,9 @@ dependencies:
   - python=3.9
   - pip
   - numpy
-  - pytorch=2.0.0
-  - pytorch-cuda=11.7
-  - torchvision=0.15.0
+  - pytorch=1.13.1
+  - pytorch-cuda=11.6
+  - torchvision=0.14.1
   - pip:
     - opencv-contrib-python
     - timm==0.4.12
