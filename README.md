@@ -41,6 +41,13 @@ See [Getting started with unsupervised segementation and fine-tuning of CAST on 
 
 ### Part segmentation on PartImageNet
 
+See [Getting started with part segmentation of CAST on PartImageNet](GETTING_STARTED_PartImageNet.md)
+
+
+### Visualize hierarchical segmentation
+
+See our [jupyter notebook](visualize_hierarchical_segmentation.ipynb)
+
 
 ## Citation
 If you find this code useful for your research, please consider citing our paper Hierarchical Vision Transformers with Adaptive Segment Tokens.
