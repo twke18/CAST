@@ -46,7 +46,7 @@ See [Getting started with part segmentation of CAST on PartImageNet](GETTING_STA
 
 ### Visualize hierarchical segmentation
 
-See our [jupyter notebook](visualize_hierarchical_segmentation.ipynb)
+See our [jupyter notebook](notebooks/visualize_hierarchical_segmentation.ipynb)
 
 
 ## Citation
@@ -58,4 +58,4 @@ If you find this code useful for your research, please consider citing our paper
 CAST is released under the MIT License (refer to the LICENSE file for details).
 
 ## Acknowledgement
-This release of code is based on [MOCO-v3](https://github.com/facebookresearch/moco-v3), [DeiT](https://github.com/facebookresearch/deit), [SegFormer](https://github.com/NVlabs/SegFormer), [SPML](https://github.com/twke18/SPML), and [OV-Seg](https://github.com/facebookresearch/ov-seg).
+This release of code is based on [MOCO-v3](https://github.com/facebookresearch/moco-v3), [DeiT](https://github.com/facebookresearch/deit), [SegFormer](https://github.com/NVlabs/SegFormer), [SPML](https://github.com/twke18/SPML), and [OVSeg](https://github.com/facebookresearch/ov-seg).

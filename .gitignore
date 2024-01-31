@@ -107,7 +107,6 @@ ENV/
 # Working directories.
 snapshots/
 runs/
-notebooks/
 temp/
 data/
 
