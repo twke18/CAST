@@ -14,8 +14,7 @@ Create a conda environment with the following command:
 > conda activate cast
 
 # install dgl (https://www.dgl.ai/pages/start.html)
-> pip install  dgl -f https://data.dgl.ai/wheels/cu116/repo.html
-> pip install  dglgo -f https://data.dgl.ai/wheels-test/repo.html
+> pip install dgl -f https://data.dgl.ai/wheels/cu116/dgl-1.1.3%2Bcu116-cp38-cp38-manylinux1_x86_64.whl
 
 # install
 > pip install -e .
@@ -58,4 +57,4 @@ If you find this code useful for your research, please consider citing our paper
 CAST is released under the MIT License (refer to the LICENSE file for details).
 
 ## Acknowledgement
-This release of code is based on [MOCO-v3](https://github.com/facebookresearch/moco-v3), [DeiT](https://github.com/facebookresearch/deit), [SegFormer](https://github.com/NVlabs/SegFormer), [SPML](https://github.com/twke18/SPML), and [OVSeg](https://github.com/facebookresearch/ov-seg).
+This release of code is based on [MOCO-v3](https://github.com/facebookresearch/moco-v3), [DeiT](https://github.com/facebookresearch/deit), [SegFormer](https://github.com/NVlabs/SegFormer), [SPML](https://github.com/twke18/SPML).

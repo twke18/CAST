@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import seg_utils.segsort as segsort
-import seg_utils.utils as utils
+import vits_vis_utils.segsort as segsort
+import vits_vis_utils.utils as utils
 
 
 class SphericalKMeans(nn.Module):

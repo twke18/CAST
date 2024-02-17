@@ -13,4 +13,6 @@ python -W ignore -m torch.distributed.launch \
   --data-path data/ILSVRC2014/Img \
   --distributed \
   --dist-eval \
+  --eval \
+  --resume snapshots/deit/imagenet1k/cast_small/best_checkpoint.pth \
   --output_dir snapshots/deit/imagenet1k/cast_small

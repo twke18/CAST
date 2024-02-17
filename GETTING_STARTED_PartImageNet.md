@@ -5,6 +5,22 @@ We employ open-vocabulary segmentation to predict parts and wholes labels based 
 
 We provide jupyter notebooks for predicting segmentation maps and conducting evaluations. We save the segmentations first and reuse them in subsequent evaluations.
 
+### Installation
+
+1. SAM
+```
+> pip install git+https://github.com/facebookresearch/segment-anything.git
+```
+
+2. OVSeg. Follow the [installation guide of OVSeg](https://github.com/facebookresearch/ov-seg/blob/main/INSTALL.md).
+
+
+### Data preparation
+
+1. Download PartImageNet (TODO)
+```
+```
+
 ### Pre-train on ImageNet for classification
 
 1. Save hierarchical segmentation:
