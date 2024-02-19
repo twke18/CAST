@@ -17,11 +17,12 @@ We provide jupyter notebooks for predicting segmentation maps and conducting eva
 
 ### Data preparation
 
-1. Download PartImageNet (TODO)
-```
-```
+1. Download PartImageNet
+- Download the PartImageNet_OOD dataset from the [github](https://github.com/TACJu/PartImageNet).
+- Install the [cocoapi](https://github.com/cocodataset/cocoapi) to manage the segmentations.
 
-### Pre-train on ImageNet for classification
+
+### Apply CAST for open-vocabulary segmentation
 
 1. Save hierarchical segmentation:
 - [CAST](notebooks/save_segmentation_cast.ipynb)
