@@ -2,15 +2,13 @@ name: cast
 channels:
   - pytorch
   - nvidia
-  - conda-forge
-  - defaults
 dependencies:
   - python=3.9
   - pip
   - numpy
-  - pytorch=1.13.1
   - pytorch-cuda=11.6
-  - torchvision=0.14.1
+  - pytorch==1.13.1
+  - torchvision==0.14.1
   - pip:
     - opencv-contrib-python
     - timm==0.4.12
@@ -24,3 +22,5 @@ dependencies:
     - easydict==1.9
     - pyyaml==5.3
     - tensorboardX
+    - torchmetrics
+    - open_clip_torch

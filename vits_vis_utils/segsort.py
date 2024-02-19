@@ -5,7 +5,7 @@
 
 import torch
 
-import seg_utils.utils as utils
+from vits_vis_utils.utils import normalize_embedding, one_hot
 
 
 def calculate_prototypes_from_labels(embeddings,
@@ -36,7 +36,7 @@ def calculate_prototypes_from_labels(embeddings,
                            device=embeddings.device)
   labels = labels.view(-1, 1).expand(-1, embeddings.shape[-1])
   prototypes = prototypes.scatter_add_(0, labels, embeddings)
-  prototypes = utils.normalize_embedding(prototypes)
+  prototypes = normalize_embedding(prototypes)
 
   return prototypes
 
@@ -244,7 +244,7 @@ def find_majority_label_index(semantic_labels, cluster_labels):
 
   #accumulate_semantic_labels = torch.mm(one_hot_cluster_labels.t(),
   #                                      one_hot_semantic_labels)
-  one_hot_semantic_labels = utils.one_hot(
+  one_hot_semantic_labels = one_hot(
       semantic_labels, num_classes)
   accumulate_semantic_labels = torch.zeros(
       (num_clusters, num_classes),
@@ -348,7 +348,7 @@ def segment_by_kmeans(embeddings,
       local_features[batch_index].view(-1, local_features.shape[-1]))
     cur_embeddings_with_loc = torch.cat(
         [cur_embeddings, cur_local_features], -1)
-    cur_embeddings_with_loc = utils.normalize_embedding(
+    cur_embeddings_with_loc = normalize_embedding(
         cur_embeddings_with_loc)
 
     # Remove ignore label.
