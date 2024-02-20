@@ -29,7 +29,18 @@ In general, our code base expects the data struction as follows:
    |                             |------ VOC2010/
    |
    |------------- ade20k/
-                    |---------- ADEChallengeData2016/
+   |                |---------- ADEChallengeData2016/
+   |
+   |------------- PartImageNet/
+                    |------ annotations/
+                    |            |------ val.json
+                    |            |------ train.json
+                    |            |------ test.json
+                    |
+                    |------ images/
+                                 |------ val/
+                                 |------ train/
+                                 |------ test/
 ```
 
 ### ImageNet-1K / ImageNet-100
@@ -51,13 +62,17 @@ Download validation images from Pascal VOC 2012.  Please follow the instruction 
 Follow the command of [Segmenter](https://github.com/rstrudel/segmenter/blob/master/segm/scripts/prepare_pcontext.py).  Run Segmenter's python script:
 
 ```
-python Segmenter/segm/scripts/prepare_pcontext.py ./data
+> export PYTHONPATH=$(pwd)/segmenter/
+> python segmenter/segm/scripts/prepare_pcontext.py ./data
 ```
-
 
 ### ADE20K
 Follow the command of [Segmenter](https://github.com/rstrudel/segmenter/blob/master/segm/scripts/prepare_ade20k.py).  Run Segmenter's python script:
 
 ```
-python Segmenter/segm/scripts/prepare_ade20k.py ./data
+> export PYTHONPATH=$(pwd)/segmenter/
+> python segmenter/segm/scripts/prepare_ade20k.py ./data
 ```
+
+### PartImageNet
+Download the PartImageNet_OOD dataset from the [github](https://github.com/TACJu/PartImageNet).  Decompress the zip file and put them under `./data`

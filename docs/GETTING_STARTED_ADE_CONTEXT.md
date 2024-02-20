@@ -1,7 +1,7 @@
 # Getting started with fine-tuning CAST on ADE20K and Pascal Context
 Our CAST can also be fine-tuned for fully-supervised semantic segmentation.  In the paper, we use [Segmenter](https://github.com/rstrudel/segmenter) framework for all experiments.
 
-We provide the bashscripts for running fine-tuning experiments.  By default, we use Deit-trained `CAST-S`.  You can use larger models, e.g. `CAST-B` by replacing `--backbone deit_cast_small` with `--backbone deit_cast_base` in the bashscripts.
+We provide the bashscripts for running fine-tuning experiments.  By default, we use Deit-trained `CAST-S`.  You can use larger models, e.g. `CAST-B` by replacing `--backbone deit_cast_small` with `--backbone deit_cast_base` and set the correct path to the `--pretrained` argument in the bashscripts.
 
 See [MODEL_ZOO.md](MODEL_ZOO.md) for downloading our (pre-)trained model weights.
 

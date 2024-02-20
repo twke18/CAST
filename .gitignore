@@ -109,7 +109,9 @@ snapshots/
 runs/
 temp/
 data/
+pred_segs/
 
 # Saved models.
 *.pth.tar
 lincls_log
+*.zip

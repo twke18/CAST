@@ -106,7 +106,7 @@ def create_cast_deit(model_cfg):
     if 'pretrained' in model_cfg.keys():
         pretrained = model_cfg["pretrained"]
         print(f'Load from pretrained weights: {pretrained}')
-        checkpoint = torch.load(pretrined)
+        checkpoint = torch.load(pretrained)
 
         state_dict = checkpoint['model']
 

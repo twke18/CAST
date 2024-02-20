@@ -24,3 +24,8 @@ dependencies:
     - tensorboardX
     - torchmetrics
     - open_clip_torch
+    - pycocotools
+    - click
+    - python-hostlist
+    - tqdm
+    - requests

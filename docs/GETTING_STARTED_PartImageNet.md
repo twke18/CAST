@@ -17,9 +17,21 @@ We provide jupyter notebooks for predicting segmentation maps and conducting eva
 
 ### Data preparation
 
-1. Download PartImageNet
-- Download the PartImageNet_OOD dataset from the [github](https://github.com/TACJu/PartImageNet).
-- Install the [cocoapi](https://github.com/cocodataset/cocoapi) to manage the segmentations.
+1. Download the PartImageNet_OOD dataset from the [github](https://github.com/TACJu/PartImageNet).  Decompress the zip file and put them under `./data`
+
+#### Expected directory layout
+```
+./data/PartImageNet
+            |------ annotations/
+            |          |------ val.json
+            |          |------ train.json
+            |          |------ test.json
+            |
+            |------ images/
+                       |------ val/
+                       |------ train/
+                       |------ test/
+```
 
 
 ### Apply CAST for open-vocabulary segmentation

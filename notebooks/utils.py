@@ -144,7 +144,7 @@ def visualize_seg(image_tensor, cmap):
     
     plt.figure()
     plt.axis('off')
-    plt.imshow(image_np, cmap=cmap, vmin=0, vmax=len(cmap.colors)-1, interpolation='nearest')
+    plt.imshow(image_np, cmap=cmap, interpolation='nearest')
     
     
 def adjust_lightness(color, amount=0.5):

@@ -29,7 +29,8 @@ class PartImageNetWithMask(Dataset):
         img_id = self.ids[index]
 
         path = self.coco.loadImgs(img_id)[0]['file_name']
-        img = Image.open(os.path.join(self.img_root, path)).convert('RGB')
+        class_dir = os.path.basename(path)[:9]
+        img = Image.open(os.path.join(self.img_root, class_dir, path)).convert('RGB')
         H, W = self.coco.imgs[img_id]['height'], self.coco.imgs[img_id]['width']
     
         seg_c = np.ones([H, W]) * len(self.classname_c)  # coarse seg
