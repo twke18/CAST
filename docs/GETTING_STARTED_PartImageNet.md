@@ -1,7 +1,6 @@
 # Getting started with part segmentation of CAST on PartImageNet
 
-
-We employ open-vocabulary segmentation to predict parts and wholes labels based on the CAST segments. In this paper, we apply the OVSeg framework [OVSeg](https://github.com/facebookresearch/ov-seg), which predicts labels for masked images, except we did not fine-tune CLIP on these masked images.
+We employ open-vocabulary segmentation to predict parts-and-whole labels based on the CAST segments. In this paper, we apply the OVSeg framework [OVSeg](https://github.com/facebookresearch/ov-seg), which predicts labels for masked images, except we did not fine-tune CLIP on these masked images.
 
 We provide jupyter notebooks for predicting segmentation maps and conducting evaluations. We save the segmentations first and reuse them in subsequent evaluations.
 

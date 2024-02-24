@@ -4,14 +4,12 @@ Our CAST can do unsupervised/fully-supervised segmentation on Pascal VOC.  For u
 
 We provide the bashscripts for running all experiments.  By default, we use MoCo-trained `CAST-S`.
 
-See [MODEL_ZOO.md](MODEL_ZOO.md) for downloading our (pre-)trained model weights.
-
 1. Unsupervised segmentation on VOC
 ```
-bash scripts/spml/nn_cast.sh
+> bash scripts/spml/nn_cast.sh
 ```
 
 2. Fine-tuning CAST on Pascal Context
 ```
-bash scripts/spml/finetune_cast.sh
+> bash scripts/spml/finetune_cast.sh
 ```

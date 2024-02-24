@@ -153,47 +153,24 @@ class CAST(VisionTransformer):
         return (x, cls_token, pool_logit, centroid,
                 pool_pad_mask, pool_inds, out)
 
-    def forward_features(self, x, y, upscale_features=False):
+    def forward_features(self, x, y):
         x = self.patch_embed(x) # NxHxWxC
         N, H, W, C = x.shape
 
         # Collect features within each segment
-        if upscale_features:
-            yH, yW = y.shape[-2:]
-            x = F.interpolate(x.permute(0, 3, 1, 2),
-                              size=(yH, yW),
-                              mode='bilinear').permute(0, 2, 3, 1)
-            x = segment_mean_nd(x, y)
+        y = y.unsqueeze(1).float()
+        y = F.interpolate(y, x.shape[1:3], mode='nearest')
+        y = y.squeeze(1).long()
+        x = segment_mean_nd(x, y)
 
-            # Create padding mask.
-            ones = torch.ones((N, yH, yW, 1), dtype=x.dtype, device=x.device)
-            avg_ones = segment_mean_nd(ones, y).squeeze(-1)
-            x_padding_mask = avg_ones <= 0.5
+        # Create padding mask
+        ones = torch.ones((N, H, W, 1), dtype=x.dtype, device=x.device)
+        avg_ones = segment_mean_nd(ones, y).squeeze(-1)
+        x_padding_mask = avg_ones <= 0.5
 
-            # Collect positional encodings within each segment.
-            pos_embed = self.pos_embed
-            pos_embed = pos_embed.view(1, H, W, C)
-            pos_embed = F.interpolate(
-                pos_embed.permute(0, 3, 1, 2),
-                size=(yH, yW), mode='bicubic', align_corners=False
-            )
-            pos_embed = pos_embed.permute(0, 2, 3, 1).contiguous()
-            pos_embed = pos_embed.expand(N, -1, -1, -1)
-            pos_embed = segment_mean_nd(pos_embed, y)
-        else:
-            y = y.unsqueeze(1).float()
-            y = F.interpolate(y, x.shape[1:3], mode='nearest')
-            y = y.squeeze(1).long()
-            x = segment_mean_nd(x, y)
-
-            # Create padding mask
-            ones = torch.ones((N, H, W, 1), dtype=x.dtype, device=x.device)
-            avg_ones = segment_mean_nd(ones, y).squeeze(-1)
-            x_padding_mask = avg_ones <= 0.5
-
-            # Collect positional encodings within each segment
-            pos_embed = self.pos_embed.view(1, H, W, C).expand(N, -1, -1, -1)
-            pos_embed = segment_mean_nd(pos_embed, y)
+        # Collect positional encodings within each segment
+        pos_embed = self.pos_embed.view(1, H, W, C).expand(N, -1, -1, -1)
+        pos_embed = segment_mean_nd(pos_embed, y)
 
         # Add positional encodings
         x = self.pos_drop(x + pos_embed)
@@ -256,10 +233,8 @@ class CAST(VisionTransformer):
 
         return intermediates
 
-    def forward(self, x, y, upscale_features=False):
-        intermediates = self.forward_features(
-            x, y, upscale_features=upscale_features
-        )
+    def forward(self, x, y):
+        intermediates = self.forward_features(x, y)
         x = self.head(intermediates['out4'])
 
         return x

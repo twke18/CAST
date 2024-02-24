@@ -49,7 +49,7 @@ Download [ILSVRC2014](https://image-net.org/challenges/LSVRC/2014/index.php).
 See [this list](./misc/imagenet100.txt) of ImageNet-100 subset.  After downloading ILSVRC2014, run the following python script for filtering out the ImageNet-100 subset:
 
 ```
-python scripts/data/filter_imagenet100.py
+> python scripts/data/filter_imagenet100.py
 ```
 
 ### MSCOCO

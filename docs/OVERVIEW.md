@@ -1,5 +1,5 @@
 # Model overview
-In this code base, we provide our implementation of [CASTActor](../cast_models/cast.py).  We provide an overview of input and output of both models.
+In this code base, we provide our implementation of [CAST](../cast_models/cast.py).  We provide an overview of input and output of both models.
 
 ## Input format
 Our CAST takes input as images and the corresponding superpixels.  CAST first aggregates pixel features into tokens within each superpixel, and groups the segment tokens hierarchically.  The final hierarchical segmentaiton can be derived by looking up the fine-to-coarse grouping indices at each level.
@@ -11,10 +11,10 @@ Our CAST takes input as images and the corresponding superpixels.  CAST first ag
 ## Model variants and output format
 We provide four variants of CAST for each experiment reported in the paper.
 
-1. `cast_models/cast.py`: the model self-supervised trained on ImageNet.  The model outputs the [CLS] token of shape (batch_size, C).  We report the linear probing results in Table 4.
-2. `cast_models/cast_seg.py`: the model self-supervised trained on COCO.  The model outputs the patch-wise tokens of shape (batch_size, H*W, C).  We report the semantic segmentation results before and after fine-tuning on Pascal VOC 2012 in Table 3a.
-3. `cast_models/cast_deit.py`: the model supervised trained on ImageNet.  The model outputs the [CLS] token of shape (batch_size, C).  We use such pre-trained models for fine-tuning on ADE20K and Pascal Context.
-4. `cast_models/cast_seg_deit.py`: the model fine-tuned on ADE20K and Pascal Context.  The model outputs the [CLS] and patch-wise tokens of shape (batch_size, 1 + H*W, C).  We report the semantic segmentation results in Table 3b and 3c.
+1. `cast_models/cast.py`: the model is self-supervised trained on ImageNet.  The model outputs the [CLS] token of shape (batch_size, C).  We report the linear probing results in Table 4.
+2. `cast_models/cast_seg.py`: the model is self-supervised trained on COCO.  The model outputs the patch-wise tokens of shape (batch_size, H*W, C).  We report the semantic segmentation results before and after fine-tuning on Pascal VOC 2012 in Table 3a.
+3. `cast_models/cast_deit.py`: the model is supervised trained on ImageNet.  The model outputs the [CLS] token of shape (batch_size, C).  We use such pre-trained models for fine-tuning on ADE20K and Pascal Context.
+4. `cast_models/cast_seg_deit.py`: the model is fine-tuned on ADE20K and Pascal Context.  The model outputs the [CLS] and patch-wise tokens of shape (batch_size, 1 + H*W, C).  We report the semantic segmentation results in Table 3b and 3c.
 
 We also provide a baseline which uses superpixel tokens and [ToMe](https://arxiv.org/abs/2210.09461) for hierarchical grouping.  See [moco-v3/models/tome_suppix.py](../moco-v3/models/tome_suppix.py)
 
