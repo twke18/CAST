@@ -29,8 +29,8 @@ model = cast_small()
 # prepare superpixels
 > n_segments = 196
 > image = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
-> seeds = cv2.ximgproc.createSuperpixelSEEDS(samp.shape[1],
-                                             samp.shape[0],
+> seeds = cv2.ximgproc.createSuperpixelSEEDS(image.shape[1],
+                                             image.shape[0],
                                              3,
                                              num_superpixels=n_segments,
                                              num_levels=1,
