@@ -88,7 +88,7 @@ We host the model weights on hugging face.
 
 | CAST-S | mIoU | pre-trained weights |
 |:--------:|:--------:|:--------:|
-|  before fine-tuning | 38.4 | [link](https://huggingface.co/twke/CAST/blob/main/snapshots/moco/coco/cast_small/checkpoint_01499.pth.tar) |
+|  before fine-tuning | 38.4 | [link](https://huggingface.co/twke/CAST/blob/main/snapshots/moco/coco/cast_small/checkpoint_0149.pth.tar) |
 |  after fine-tuning | 67.6| [link](https://huggingface.co/twke/CAST/blob/main/snapshots/moco/coco/cast_small/checkpoint_0399.pth.tar) |
 
 We pre-train CAST for 400 epochs on COCO.  Segmentation before fine-tuning on VOC uses the checkpoint at the 149th epoch.  Segmentation after fine-tuning on VOC uses the final checkpoint.
@@ -106,6 +106,12 @@ We also provide a compressed [zip file](https://huggingface.co/twke/CAST/blob/ma
 If you find this code useful for your research, please consider citing our paper "Learning Hierarchical Image Segmentation For Recognition and By Recognition".
 
 ```
+@inproceedings{ke2023cast,
+  title={Learning Hierarchical Image Segmentation For Recognition and By Recognition},
+  author={Ke, Tsung-Wei and Mo, Sangwoo and Stella, X Yu},
+  booktitle={The Twelfth International Conference on Learning Representations},
+  year={2023}
+}
 ```
 
 ## License
