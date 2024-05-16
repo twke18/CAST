@@ -108,7 +108,7 @@ ENV/
 snapshots/
 runs/
 temp/
-data/
+/data/
 pred_segs/
 
 # Saved models.
