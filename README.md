@@ -7,7 +7,13 @@ Official implementation of ["Learning Hierarchical Image Segmentation For Recogn
 <img src="figs/framework.png" alt="input image" width="60%"/>
 </div>
 
-Image segmentation and recognition occur simultaneously, with recognition relying on the underlying segmentation to form a continuous visual grouping hierarchy. For example, the same object can be parsed into different part-to-whole structures, resulting in varying recognitions. Despite this, most prior works treated segmentation and recognition as separate tasks. In this paper, we aim to devise a learning framework that involves segmentation in the recognition process, utilizing hierarchical segmentation for recognition, which is learned by recognition. Specifically, we propose CAST, which realizes this concept through designs inspired by vision transformers, enabling concurrent segmentation and recognition with a single model. The core idea of CAST is to employ adaptive segment tokens that group the finest pixels into coarser segments, using the latest embedding to represent the entire image for recognition. Trained solely on image recognition objectives, CAST automatically discovers the hierarchy of segments. Our experiments demonstrate that CAST provides consistent hierarchical segmentation and recognition, which is impossible with state-of-the-art segmentation methods such as SAM. Additionally, CAST offers several advantages over the standard ViT, including improved semantic segmentation, computational efficiency, and object-centric attention.
+Large vision and language models learned directly through image-text associations often lack detailed visual substantiation, whereas image segmentation tasks are treated separately from recognition, supervisedly learned without interconnections.
+
+Our key observation is that, while an image can be recognized in multiple ways, each has a consistent part-and-whole visual organization. Segmentation thus should be treated not as an end task to be mastered through supervised learning, but as an internal process that evolves with and supports the ultimate goal of recognition.
+
+We propose to integrate a hierarchical segmenter into the recognition process, train and adapt the entire model solely on image-level recognition objectives. We learn hierarchical segmentation for free alongside recognition, automatically uncovering part-to-whole relationships that not only underpin but also enhance recognition.
+
+Enhancing the Vision Transformer (ViT) with adaptive segment tokens and graph pooling, our model surpasses ViT in unsupervised part-whole discovery, semantic segmentation, image classification, and efficiency. Notably, our model (trained on unlabeled 1M ImageNet images) outperforms SAM (trained on 11M images and 1 billion masks) by absolute 8% in mIoU on PartImageNet object segmentation
 
 
 ### Hierarchical segmentation derived from image-based self-supervised learning
