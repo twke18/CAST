@@ -36,13 +36,13 @@ We provide jupyter notebooks for predicting segmentation maps and conducting eva
 ### Apply CAST for open-vocabulary segmentation
 
 1. Save hierarchical segmentation:
-- [CAST](notebooks/save_segmentation_cast.ipynb)
-- [ViT](notebooks/save_segmentation_vit.ipynb)
+- [CAST](../notebooks/save_segmentation_cast.ipynb)
+- [ViT](../notebooks/save_segmentation_vit.ipynb)
 
 2. Visualize open-vocabulary segmentation:
-- [CAST/ViT](notebooks/visualize_ovseg_cast.ipynb)
-- [SAM](notebooks/visualize_ovseg_sam.ipynb)
+- [CAST/ViT](../notebooks/visualize_ovseg_cast.ipynb)
+- [SAM](../notebooks/visualize_ovseg_sam.ipynb)
 
 3. Evaluate open-vocabulary segmentation:
-- [CAST/ViT](notebooks/eval_ovseg_cast.ipynb)
-- [SAM](notebooks/eval_ovseg_sam.ipynb)
+- [CAST/ViT](../notebooks/eval_ovseg_cast.ipynb)
+- [SAM](../notebooks/eval_ovseg_sam.ipynb)
